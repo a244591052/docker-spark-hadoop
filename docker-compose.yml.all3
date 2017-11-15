@@ -1,0 +1,228 @@
+version: "3"
+
+services:
+
+  namenode:
+    image: hadoop:v1
+    command: bin/hdfs --config /usr/hadoop/etc/hadoop --hostnames namenode namenode
+    hostname: namenode
+    expose:
+      - 50010
+      - 50020
+      - 50070
+      - 50075
+      - 50090
+      - 8020
+      - 9000
+    ports:
+      - 50070:50070
+    volumes:
+        - /root/hadoop/dfs/name:/root/hadoop/dfs/name
+
+
+  datanode1:
+    image: hadoop:v1
+    command: bin/hdfs --config /usr/hadoop/etc/hadoop --hostnames datanode1 datanode
+    hostname: datanode1
+    links:
+      - namenode
+    expose:
+      - 50010
+      - 50020
+      - 50070
+      - 50075
+      - 50090
+      - 8020
+      - 9000
+    ports:
+      - 50075:50075
+    volumes:
+        - /root/hadoop/dfs/data1:/root/hadoop/dfs/data
+
+
+
+  datanode2:
+    image: hadoop:v1
+    command: bin/hdfs --config /usr/hadoop/etc/hadoop --hostnames datanode2 datanode
+    hostname: datanode2
+    links:
+      - namenode
+    expose:
+      - 50010
+      - 50020
+      - 50070
+      - 50075
+      - 50090
+      - 8020
+      - 9000
+    ports:
+      - 50076:50075
+    volumes:
+        - /root/hadoop/dfs/data2:/root/hadoop/dfs/data
+
+
+  secondNameNode:
+    image: hadoop:v1
+    command: bin/hdfs --config /usr/hadoop/etc/hadoop --hostnames secondNameNode secondarynamenode
+    hostname: secondNameNode
+    links:
+      - namenode
+    expose:
+      - 50010
+      - 50020
+      - 50070
+      - 50075
+      - 50090
+      - 8020
+      - 9000
+    ports:
+      - 50090:50090
+
+
+  master:
+    image: spark:2.2.0
+    command: bin/spark-class org.apache.spark.deploy.master.Master -h master
+    hostname: master
+    environment:
+      MASTER: spark://master:7077
+      SPARK_PUBLIC_DNS: master
+    links:
+      - namenode
+    expose:
+      - 7001
+      - 7002
+      - 7003
+      - 7004
+      - 7005
+      - 7006
+      - 7077
+      - 6066
+    ports:
+      - 4040:4040
+      - 6066:6066
+      - 7077:7077
+      - 8080:8080
+
+
+
+
+  worker1:
+    image: spark:2.2.0
+    command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://master:7077
+    hostname: worker1
+    environment:
+      SPARK_WORKER_CORES: 2
+      SPARK_WORKER_MEMORY: 1g
+      SPARK_WORKER_PORT: 8881
+      SPARK_WORKER_WEBUI_PORT: 8081
+      SPARK_PUBLIC_DNS: master
+    links:
+      - master
+    expose:
+      - 7012
+      - 7013
+      - 7014
+      - 7015
+      - 7016
+      - 8881
+    ports:
+      - 8081:8081
+
+
+  worker2:
+    image: spark:2.2.0
+    command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://master:7077
+    hostname: worker2
+    environment:
+      SPARK_WORKER_CORES: 2
+      SPARK_WORKER_MEMORY: 1g
+      SPARK_WORKER_PORT: 8881
+      SPARK_WORKER_WEBUI_PORT: 8082
+      SPARK_PUBLIC_DNS: master
+    links:
+      - master
+    expose:
+      - 7012
+      - 7013
+      - 7014
+      - 7015
+      - 7016
+      - 8882
+    ports:
+      - 8082:8082
+
+
+  historyServer:
+    image: spark:2.2.0
+    command: bin/spark-class org.apache.spark.deploy.history.HistoryServer
+    hostname: historyServer
+    environment:
+      MASTER: spark://master:7077
+      SPARK_PUBLIC_DNS: master
+      SPARK_HISTORY_OPTS: "-Dspark.history.ui.port=18080 -Dspark.history.retainedApplications=3 -Dspark.history.fs.logDirectory=hdfs://namenode:9000/spark/history"
+    links:
+      - master
+      - namenode
+    expose:
+      - 18080
+    ports:
+      - 18080:18080
+
+
+  ResourceManager:
+    image: hadoop:v1
+    command: bin/yarn --config /usr/hadoop/etc/hadoop resourcemanager
+    hostname: ResourceManager
+    expose:
+      - 8030
+      - 8031
+      - 8032
+      - 8033
+      - 8040
+      - 8042
+      - 8088
+    ports:
+      - 8088:8088
+
+  nodemanager1:
+    image: hadoop:v1
+    command: bin/yarn --config /usr/hadoop/etc/hadoop nodemanager
+    hostname: nodemanager1
+    links:
+      - ResourceManager
+    expose:
+      - 8030
+      - 8031
+      - 8032
+      - 8033
+      - 8040
+      - 8042
+    ports:
+      - 8042:8042
+
+  nodemanager2:
+    image: hadoop:v1
+    command: bin/yarn --config /usr/hadoop/etc/hadoop nodemanager
+    hostname: nodemanager2
+    links:
+      - ResourceManager
+    expose:
+      - 8030
+      - 8031
+      - 8032
+      - 8033
+      - 8040
+      - 8042
+    ports:
+      - 8043:8042
+
+
+
+
+
+
+
+
+
+
+

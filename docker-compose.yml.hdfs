@@ -1,0 +1,85 @@
+master:
+  image: hadoop:v1
+  command: bin/hdfs --config /usr/hadoop/etc/hadoop namenode
+  hostname: master
+  environment:
+    HADOOP_PUBLIC_DNS: master
+  expose:
+    - 50010
+    - 50020
+    - 50070
+    - 50075
+    - 50090
+    - 8020
+    - 9000
+  ports:
+    - 50070:50070
+  volumes:
+      - /root/hadoop/dfs/name:/root/hadoop/dfs/name
+
+
+
+slave1:
+  image: hadoop:v1
+  command: bin/hdfs --config /usr/hadoop/etc/hadoop datanode
+  hostname: slave1
+  environment:
+    dfs.datanode.dns.nameserver: master
+  links:
+    - master
+  expose:
+    - 50010
+    - 50020
+    - 50070
+    - 50075
+    - 50090
+    - 8020
+    - 9000
+  ports:
+    - 50075:50075
+  volumes:
+      - /root/hadoop/dfs/data1:/root/hadoop/dfs/data
+
+
+
+slave2:
+  image: hadoop:v1
+  command: bin/hdfs --config /usr/hadoop/etc/hadoop datanode
+  hostname: slave2
+  environment:
+    dfs.datanode.dns.nameserver: master
+  links:
+    - master
+  expose:
+    - 50010
+    - 50020
+    - 50070
+    - 50075
+    - 50090
+    - 8020
+    - 9000
+  ports:
+    - 50076:50075
+  volumes:
+      - /root/hadoop/dfs/data2:/root/hadoop/dfs/data
+
+
+secondName:
+  image: hadoop:v1
+  command: bin/hdfs --config /usr/hadoop/etc/hadoop secondarynamenode
+  hostname: secondName
+  environment:
+    dfs.datanode.dns.nameserver: master
+  links:
+    - master
+  expose:
+    - 50010
+    - 50020
+    - 50070
+    - 50075
+    - 50090
+    - 8020
+    - 9000
+  ports:
+    - 50090:50090
+
