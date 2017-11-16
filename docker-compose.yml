@@ -1,4 +1,4 @@
-version: "3"
+version: "3.3"
 
 services:
   namenode:
@@ -9,23 +9,36 @@ services:
       - "50070:50070"
     networks:
       - hadoopv1
+    volumes:
+      - /root/hadoop/dfs/name:/root/hadoop/dfs/name
+    deploy:
+      placement:
+        constraints:
+          - node.hostname == master
 
 
   datanode:
     image: hadoop:v1
-    command: bin/hdfs --config /usr/hadoop/etc/hadoop --hostnames datanode datanode
-    hostname: datanode
+    command: bin/hdfs --config /usr/hadoop/etc/hadoop datanode
+    networks:
+      - hadoopv1
+    configs:
+      - source: slaves
+        target: /usr/hadoop/etc/hadoop/slaves
     deploy:
-      replicas: 1
+      replicas: 3
       update_config:
         parallelism: 2
         delay: 10s
       restart_policy:
         condition: on-failure
-    networks:
-      - hadoopv1
-    volumes:
-      - /root/hadoop/dfs/data:/root/hadoop/dfs/data
+
+
+
+configs:
+  slaves:
+    external: true
+
 
 networks:
   hadoopv1:
