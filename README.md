@@ -28,6 +28,14 @@
 - docker service：服务创建，子命令有create, inspect, update, remove, tasks。（docker service--help查看帮助）
 - docker node：节点管理，子命令有accept, promote, demote, inspect, update, tasks, ls, rm。（docker node --help查看帮助）
 
+- 部署compose服务
+`docker stack deploy -c docker-compose.yml hadoop1`
+
+- 删除compose服务
+`docker stack rm hadoop1`
+
+
+
 ### 服务发现
 1. overlay（swarm自带）
     
@@ -57,5 +65,13 @@ configs:
   my_config: # 上面引用配置项的具体实现
     file: ./my_config.txt # 宿主机上的配置文件路径
   my_other_config:
-    external: true  # 这个命令表示该配置项事先已经定义，可以使用docker config命令事先定义
+    external: true  # 这个命令表示该配置项事先已经定义，可以使用docker config命令事先定义，否则会出错
 ```
+
+### HDFS、YARN  使用-D参数指定配置，使得镜像更加灵活
+```-Dfs.defaultFS=hdfs://namenode:9000 -Ddfs.name.dir=/root/hadoop/dfs/name -Ddfs.data.dir=/root/hadoop/dfs/data -Ddfs.replication=1 -Ddfs.permissions=false -Ddfs.namenode.datanode.registration.ip-hostname-check=false -Dmapreduce.framework.name=yarn -Dyarn.resourcemanager.hostname=ResourceManager -Dyarn.nodemanager.aux-services=mapreduce_shuffle -Dyarn.scheduler.maximum-allocation-mb=2048 -Dyarn.nodemanager.resource.memory-mb=1024 -Dyarn.nodemanager.resource.cpu-vcores=1 -Dyarn.nodemanager.vmem-check-enabled=false```
+
+### spark 使用env参数配置
+`SPARK_HISTORY_OPTS: "-Dspark.history.ui.port=18080 -Dspark.history.retainedApplications=3 -Dspark.history.fs.logDirectory=/root/spark/history -Dspark.eventLog.enabled=true -Dspark.eventLog.dir=hdfs://namenode:9000/spark/history"
+`
+

@@ -8,34 +8,27 @@ ENV LC_ALL en_US.UTF-8
 ENV TZ=Asia/Shanghai
 
 
-RUN apk --update add wget bash tzdata \
+RUN apk --update add curl unzip bash tzdata \
     && cp /usr/share/zoneinfo/$TZ /etc/localtime \
-    && echo $TZ > /etc/timezone \
+    && echo $TZ > /etc/timezone
 
-ENV HADOOP_VERSION 2.7.4
-ENV HADOOP_PACKAGE hadoop-${HADOOP_VERSION}
-ENV HADOOP_HOME=/usr/hadoop
-ENV PATH=$PATH:${HADOOP_HOME}/bin:${HADOOP_HOME}/sbin
-
-# install hadoop
-RUN wget http://mirrors.tuna.tsinghua.edu.cn/apache/hadoop/common/${HADOOP_PACKAGE}/${HADOOP_PACKAGE}.tar.gz && \
-    tar -xzvf $HADOOP_PACKAGE.tar.gz && \
-    mv $HADOOP_PACKAGE /usr/hadoop && \
-    rm $HADOOP_PACKAGE.tar.gz && \
-    mkdir -p /root/hadoop/tmp && \
-    mkdir -p /root/hadoop/var && \
-    mkdir -p /root/hadoop/dfs/name && \
-    mkdir -p /root/hadoop/dfs/data && \
-    mkdir $HADOOP_HOME/logs
+# SPARK
+ENV SPARK_VERSION 2.2.0
+ENV SPARK_PACKAGE spark-${SPARK_VERSION}-bin-hadoop2.7
+ENV SPARK_HOME /usr/spark-${SPARK_VERSION}
+# ENV CLASS_PATH $CLASS_PATH:${SPARK_HOME}/jars
+ENV PATH $PATH:${SPARK_HOME}/bin
+ENV SPARK_HISTORY_HOME=/root/spark/history
 
 
-RUN mv /tmp/hadoop-env.sh $HADOOP_HOME/etc/hadoop/hadoop-env.sh && \
-    mv /tmp/hdfs-site.xml $HADOOP_HOME/etc/hadoop/hdfs-site.xml && \
-    mv /tmp/core-site.xml $HADOOP_HOME/etc/hadoop/core-site.xml && \
-    mv /tmp/mapred-site.xml $HADOOP_HOME/etc/hadoop/mapred-site.xml && \
-    mv /tmp/yarn-site.xml $HADOOP_HOME/etc/hadoop/yarn-site.xml && \
-    mv /tmp/slaves $HADOOP_HOME/etc/hadoop/slaves && \
-    $HADOOP_HOME/bin/hdfs namenode -format
+RUN curl -sL --retry 3 \
+  "http://d3kbcqa49mib13.cloudfront.net/${SPARK_PACKAGE}.tgz" \
+  | gunzip \
+  | tar x -C /usr/ \
+ && mv /usr/$SPARK_PACKAGE $SPARK_HOME \
+ && chown -R root:root $SPARK_HOME \
+ && mkdir -p $SPARK_HISTORY_HOME
 
-WORKDIR $HADOOP_HOME
+WORKDIR $SPARK_HOME
 
+CMD ["bin/spark-class", "org.apache.spark.deploy.master.Master"]

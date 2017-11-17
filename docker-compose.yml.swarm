@@ -100,6 +100,8 @@ services:
     image: hadoop:v1
     command: bin/yarn --config /usr/hadoop/etc/hadoop resourcemanager
     hostname: ResourceManager
+    networks:
+      - hadoopv1
     ports:
       - 8088:8088
     deploy:
