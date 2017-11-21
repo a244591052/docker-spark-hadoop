@@ -75,3 +75,17 @@ configs:
 `SPARK_HISTORY_OPTS: "-Dspark.history.ui.port=18080 -Dspark.history.retainedApplications=3 -Dspark.history.fs.logDirectory=/root/spark/history -Dspark.eventLog.enabled=true -Dspark.eventLog.dir=hdfs://namenode:9000/spark/history"
 `
 
+### NameNode退出安全模式
+`hadoop dfsadmin -safemode leave`
+
+### spark-submit 提交任务
+
+`bin/spark-submit  --class org.apache.spark.examples.SparkPi  --master spark://master:7077 examples/jars/spark-examples_2.11-2.2.0.jar 10`
+
+### 镜像库
+```
+docker service create --name registry --publish 5000:5000 \
+--mount source=registry-vol,type=volume,target=/root/registry \
+--constraint 'node.hostname==master' registry:2
+```
+- curl master:5000/v2/_catalog

@@ -98,12 +98,12 @@ services:
 
   ResourceManager:
     image: hadoop:v1
-    command: bin/yarn --config /usr/hadoop/etc/hadoop resourcemanager
+    command: bin/yarn --config /usr/hadoop/etc/hadoop resourcemanager -Dyarn.resourcemanager.webapp.address=0.0.0.0:8088
     hostname: ResourceManager
+    ports:
+      - "8088:8088"
     networks:
       - hadoopv1
-    ports:
-      - 8088:8088
     deploy:
       restart_policy:
         condition: on-failure
@@ -128,16 +128,6 @@ services:
 networks:
   hadoopv1:
     driver: overlay
-
-
-
-
-
-
-
-
-
-
 
 
 

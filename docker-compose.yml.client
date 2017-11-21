@@ -1,0 +1,16 @@
+version: "3"
+
+services:
+  client:
+    image: spark:2.2.0
+    command: ping master
+    networks:
+      - test_hadoopv1
+
+networks:
+  test_hadoopv1:
+    external: true
+
+
+
+
