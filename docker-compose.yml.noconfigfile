@@ -1,0 +1,130 @@
+version: "3"
+
+services:
+  namenode:
+    image: master:5000/hadoop:v1_empty
+    command: bin/hdfs --config /usr/hadoop/etc/hadoop --hostnames namenode namenode -Dfs.defaultFS=hdfs://namenode:9000 -Ddfs.name.dir=/root/hadoop/dfs/name -Ddfs.data.dir=/root/hadoop/dfs/data -Ddfs.replication=1 -Ddfs.permissions=false -Ddfs.namenode.datanode.registration.ip-hostname-check=false -Ddfs.namenode.safemode.threshold-pct=0
+    hostname: namenode
+    ports:
+      - "50070:50070"
+    networks:
+      - hadoopv1
+    volumes:
+      - /root/hadoop/dfs/name:/root/hadoop/dfs/name
+    deploy:
+      placement:
+        constraints:
+          - node.hostname == master
+
+
+  datanode:
+    image: master:5000/hadoop:v1_empty
+    command: bin/hdfs --config /usr/hadoop/etc/hadoop datanode -Dfs.defaultFS=hdfs://namenode:9000 -Ddfs.name.dir=/root/hadoop/dfs/name -Ddfs.data.dir=/root/hadoop/dfs/data -Ddfs.replication=1 -Ddfs.permissions=false -Ddfs.namenode.datanode.registration.ip-hostname-check=false -Ddfs.namenode.safemode.threshold-pct=0
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 2
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+    networks:
+      - hadoopv1
+
+
+
+  master:
+    image: master:5000/spark:2.2.0_empty
+    command: bin/spark-class org.apache.spark.deploy.master.Master -h master
+    hostname: master
+    environment:
+      MASTER: spark://master:7077
+      SPARK_MASTER_OPTS: "-Dspark.eventLog.dir=hdfs://namenode:9000/spark/history"
+      SPARK_PUBLIC_DNS: master
+    ports:
+      - 8080:8080
+    networks:
+      - hadoopv1
+    deploy:
+      placement:
+        constraints:
+          - node.hostname == master
+
+
+
+  worker:
+    image: master:5000/spark:2.2.0_empty
+    command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://master:7077
+    environment:
+      SPARK_WORKER_CORES: 1
+      SPARK_WORKER_MEMORY: 1g
+      SPARK_WORKER_PORT: 8881
+      SPARK_WORKER_WEBUI_PORT: 8081
+      SPARK_PUBLIC_DNS: master
+    networks:
+      - hadoopv1
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 2
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+
+  historyServer:
+    image: master:5000/spark:2.2.0_empty
+    command: bin/spark-class org.apache.spark.deploy.history.HistoryServer
+    hostname: historyServer
+    environment:
+      MASTER: spark://master:7077
+      SPARK_PUBLIC_DNS: master
+      SPARK_HISTORY_OPTS: "-Dspark.history.ui.port=18080 -Dspark.history.retainedApplications=3 -Dspark.history.fs.logDirectory=hdfs://namenode:9000/spark/history"
+    ports:
+      - 18080:18080
+    networks:
+      - hadoopv1
+    deploy:
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints:
+          - node.hostname == master
+
+
+  ResourceManager:
+    image: master:5000/hadoop:v1_empty
+    command: bin/yarn --config /usr/hadoop/etc/hadoop resourcemanager -Dfs.defaultFS=hdfs://namenode:9000 -Dmapreduce.framework.name=yarn -Dyarn.resourcemanager.hostname=ResourceManager -Dyarn.nodemanager.aux-services=mapreduce_shuffle -Dyarn.scheduler.maximum-allocation-mb=2048 -Dyarn.nodemanager.resource.memory-mb=1024 -Dyarn.nodemanager.resource.cpu-vcores=1 -Dyarn.nodemanager.vmem-check-enabled=false -Dyarn.resourcemanager.webapp.address=0.0.0.0:8088
+    hostname: ResourceManager
+    ports:
+      - "8088:8088"
+    networks:
+      - hadoopv1
+    deploy:
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints:
+          - node.hostname == master
+
+  nodemanager:
+    image: master:5000/hadoop:v1_empty
+    command: bin/yarn --config /usr/hadoop/etc/hadoop nodemanager -Dfs.defaultFS=hdfs://namenode:9000 -Dmapreduce.framework.name=yarn -Dyarn.resourcemanager.hostname=ResourceManager -Dyarn.nodemanager.aux-services=mapreduce_shuffle -Dyarn.scheduler.maximum-allocation-mb=2048 -Dyarn.nodemanager.resource.memory-mb=1024 -Dyarn.nodemanager.resource.cpu-vcores=1 -Dyarn.nodemanager.vmem-check-enabled=false
+    networks:
+      - hadoopv1
+    deploy:
+      replicas: 3
+      update_config:
+        parallelism: 2
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+
+
+networks:
+  hadoopv1:
+    driver: overlay
+
+
+
+
