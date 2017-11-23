@@ -30,9 +30,9 @@ RUN wget http://mirrors.tuna.tsinghua.edu.cn/apache/hadoop/common/${HADOOP_PACKA
 
 RUN ls -al
 
-COPY conf/* /tmp/
+# COPY conf/* /tmp/
 
-RUN mv /tmp/hadoop-env.sh $HADOOP_HOME/etc/hadoop/hadoop-env.sh && \
+# RUN mv /tmp/hadoop-env.sh $HADOOP_HOME/etc/hadoop/hadoop-env.sh && \
     mv /tmp/hdfs-site.xml $HADOOP_HOME/etc/hadoop/hdfs-site.xml && \
     mv /tmp/core-site.xml $HADOOP_HOME/etc/hadoop/core-site.xml && \
     mv /tmp/mapred-site.xml $HADOOP_HOME/etc/hadoop/mapred-site.xml && \

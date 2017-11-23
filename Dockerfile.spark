@@ -18,7 +18,7 @@ ENV SPARK_PACKAGE spark-${SPARK_VERSION}-bin-hadoop2.7
 ENV SPARK_HOME /usr/spark-${SPARK_VERSION}
 # ENV CLASS_PATH $CLASS_PATH:${SPARK_HOME}/jars
 ENV PATH $PATH:${SPARK_HOME}/bin
-ENV SPARK_HISTORY_HOME=/root/spark/history
+# ENV SPARK_HISTORY_HOME=/root/spark/history
 
 
 RUN curl -sL --retry 3 \
@@ -27,9 +27,9 @@ RUN curl -sL --retry 3 \
   | tar x -C /usr/ \
  && mv /usr/$SPARK_PACKAGE $SPARK_HOME \
  && chown -R root:root $SPARK_HOME \
- && mkdir -p $SPARK_HISTORY_HOME
+# && mkdir -p $SPARK_HISTORY_HOME
 
-ADD spark-defaults.conf $SPARK_HOME/conf/spark-defaults.conf
+# ADD spark-defaults.conf $SPARK_HOME/conf/spark-defaults.conf
 
 WORKDIR $SPARK_HOME
 

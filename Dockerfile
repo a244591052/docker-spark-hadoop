@@ -1,16 +1,9 @@
-FROM openjdk:8u131-jre-alpine
+# 用于提交spark on yarn程序时所使用的镜像
+FROM hadoop:v1
 MAINTAINER <Sparks Li>
 
+RUN apk --update add curl unzip bash
 
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
-ENV TZ=Asia/Shanghai
-
-
-RUN apk --update add curl unzip bash tzdata \
-    && cp /usr/share/zoneinfo/$TZ /etc/localtime \
-    && echo $TZ > /etc/timezone
 
 # SPARK
 ENV SPARK_VERSION 2.2.0
@@ -29,6 +22,8 @@ RUN curl -sL --retry 3 \
  && chown -R root:root $SPARK_HOME \
  && mkdir -p $SPARK_HISTORY_HOME
 
+ADD spark-defaults.conf $SPARK_HOME/conf/spark-defaults.conf
+
+
 WORKDIR $SPARK_HOME
 
-CMD ["bin/spark-class", "org.apache.spark.deploy.master.Master"]
