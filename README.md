@@ -46,38 +46,6 @@ docker service create --name yarn_job1 \
 
 
 
-### 镜像库
-
-1. 启动本地镜像库，映射出存镜像的目录，完成持久化
-
-```
-docker service create --name registry --publish 5000:5000 \
---mount source=registry-vol,type=volume,target=/root/registry \
---constraint 'node.hostname==master' registry:2
-```
-2. 需要修改其他节点配置文件
-
-```
-    Create or modify /etc/docker/daemon.json on the client machine
-
-    { "insecure-registries":["myregistry.example.com:5000"] }
-
-    Restart docker daemon
-
-    sudo /etc/init.d/docker restart
-```
-3. 需要tag这个镜像的名字成<registry>/<image name>:<tag>:
-
-`docker tag alpine master:5000/busybox`
-
-4. 接着使用docker push <image name>推送image
-
-`docker push master:5000/busybox`
-
-5. 查看镜像库
-`curl master:5000/v2/_catalog`
-
-
 
 ### swarm overlay服务发现
     
