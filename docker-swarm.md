@@ -5,7 +5,7 @@
 
 ### Swarm简介
 Swarm这个项目名称特别贴切。在Wiki的解释中，Swarm behavior是指动物的群集行为。比如我们常见的蜂群，鱼群，秋天往南飞的雁群都可以称作Swarm behavior。
-![Alt teSwarm 特点xt](./1511763797611.png)
+![Alt text](https://github.com/a244591052/docker-spark-hadoop/blob/master/images/docker-swarm.JPG)
 
 Swarm项目正是这样，通过把多个Docker Engine聚集在一起，形成一个大的docker-engine，对外提供容器的集群服务。同时这个集群对外提供Swarm API，用户可以像使用Docker Engine一样使用Docker集群。
 
