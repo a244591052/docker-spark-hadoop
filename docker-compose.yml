@@ -2,8 +2,17 @@ version: "3"
 
 services:
   namenode:
-    image: master:5000/hadoop:v1_empty
-    command: bin/hdfs --config /usr/hadoop/etc/hadoop --hostnames namenode namenode -Dfs.defaultFS=hdfs://namenode:9000 -Ddfs.name.dir=/root/hadoop/dfs/name -Ddfs.data.dir=/root/hadoop/dfs/data -Ddfs.replication=1 -Ddfs.permissions=false -Ddfs.namenode.datanode.registration.ip-hostname-check=false -Ddfs.namenode.safemode.threshold-pct=0
+    image: hadoop:v1
+    command: [
+      "hdfs",
+      "namenode",
+      "-Dfs.defaultFS=hdfs://0.0.0.0:9000",
+      "-Ddfs.namenode.name.dir=/root/hadoop/dfs/name",
+      "-Ddfs.replication=3",
+      "-Ddfs.namenode.datanode.registration.ip-hostname-check=false",
+      "-Ddfs.permissions.enabled=false",
+      "-Ddfs.namenode.safemode.threshold-pct=0"
+      ]
     hostname: namenode
     ports:
       - "50070:50070"
@@ -18,10 +27,16 @@ services:
 
 
   datanode:
-    image: master:5000/hadoop:v1_empty
-    command: bin/hdfs --config /usr/hadoop/etc/hadoop datanode -Dfs.defaultFS=hdfs://namenode:9000 -Ddfs.name.dir=/root/hadoop/dfs/name -Ddfs.data.dir=/root/hadoop/dfs/data -Ddfs.replication=1 -Ddfs.permissions=false -Ddfs.namenode.datanode.registration.ip-hostname-check=false -Ddfs.namenode.safemode.threshold-pct=0
+    image: hadoop:v1
+    command: [
+      "hdfs",
+      "datanode",
+      "-fs", "hdfs://namenode:9000",
+      "-Ddfs.datanode.data.dir=/root/hadoop/dfs/data",
+      "-Ddfs.permissions.enabled=false"
+      ]
     deploy:
-      replicas: 2
+      replicas: 3
       update_config:
         parallelism: 2
         delay: 10s
@@ -33,12 +48,13 @@ services:
 
 
   master:
-    image: master:5000/spark:2.2.0_empty
+    image: spark:2.2.0
     command: bin/spark-class org.apache.spark.deploy.master.Master -h master
     hostname: master
     environment:
       MASTER: spark://master:7077
       SPARK_MASTER_OPTS: "-Dspark.eventLog.dir=hdfs://namenode:9000/spark/history"
+      SPARK_PUBLIC_DNS: master
     ports:
       - 8080:8080
     networks:
@@ -51,13 +67,14 @@ services:
 
 
   worker:
-    image: master:5000/spark:2.2.0_empty
+    image: spark:2.2.0
     command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://master:7077
     environment:
       SPARK_WORKER_CORES: 1
       SPARK_WORKER_MEMORY: 1g
       SPARK_WORKER_PORT: 8881
       SPARK_WORKER_WEBUI_PORT: 8081
+      SPARK_PUBLIC_DNS: master
     networks:
       - hadoopv1
     deploy:
@@ -70,7 +87,7 @@ services:
 
 
   historyServer:
-    image: master:5000/spark:2.2.0_empty
+    image: spark:2.2.0
     command: bin/spark-class org.apache.spark.deploy.history.HistoryServer
     hostname: historyServer
     environment:
@@ -90,8 +107,16 @@ services:
 
 
   ResourceManager:
-    image: master:5000/hadoop:v1_empty
-    command: bin/yarn --config /usr/hadoop/etc/hadoop resourcemanager -Dfs.defaultFS=hdfs://namenode:9000 -Dmapreduce.framework.name=yarn -Dyarn.resourcemanager.hostname=ResourceManager -Dyarn.nodemanager.aux-services=mapreduce_shuffle -Dyarn.scheduler.maximum-allocation-mb=2048 -Dyarn.nodemanager.resource.memory-mb=1024 -Dyarn.nodemanager.resource.cpu-vcores=1 -Dyarn.nodemanager.vmem-check-enabled=false -Dyarn.resourcemanager.webapp.address=0.0.0.0:8088
+    image: hadoop:v1
+    command: [
+      "yarn",
+      "resourcemanager",
+      "-Dfs.defaultFS=hdfs://namenode:9000",
+      "-Dyarn.nodemanager.aux-services=mapreduce_shuffle",
+      "-Ddfs.namenode.datanode.registration.ip-hostname-check=false",
+      "-Ddfs.permissions.enabled=false -Dmapreduce.framework.name=yarn",
+      "-Dyarn.resourcemanager.webapp.address=0.0.0.0:8088"
+        ]
     hostname: ResourceManager
     ports:
       - "8088:8088"
@@ -105,8 +130,17 @@ services:
           - node.hostname == master
 
   nodemanager:
-    image: master:5000/hadoop:v1_empty
-    command: bin/yarn --config /usr/hadoop/etc/hadoop nodemanager -Dfs.defaultFS=hdfs://namenode:9000 -Dmapreduce.framework.name=yarn -Dyarn.resourcemanager.hostname=ResourceManager -Dyarn.nodemanager.aux-services=mapreduce_shuffle -Dyarn.scheduler.maximum-allocation-mb=2048 -Dyarn.nodemanager.resource.memory-mb=1024 -Dyarn.nodemanager.resource.cpu-vcores=1 -Dyarn.nodemanager.vmem-check-enabled=false
+    image: hadoop:v1
+    command: [
+      "yarn",
+      "nodemanager",
+      "-Dyarn.resourcemanager.hostname=ResourceManager",
+      "-Dyarn.nodemanager.resource.memory-mb=1024",
+      "-Dyarn.nodemanager.aux-services=mapreduce_shuffle",
+      "-Ddfs.namenode.datanode.registration.ip-hostname-check=false",
+      "-Dmapreduce.framework.name=yarn",
+      "-Ddfs.permissions.enabled=false"
+      ]
     networks:
       - hadoopv1
     deploy:
@@ -117,12 +151,6 @@ services:
       restart_policy:
         condition: on-failure
 
-
-
 networks:
   hadoopv1:
     driver: overlay
-
-
-
-
